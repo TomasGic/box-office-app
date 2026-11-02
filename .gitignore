@@ -1,0 +1,10 @@
+# Ignore local Sqlite database files
+db/*.sqlite3
+
+# Ignore everything inside the tmp folder, except tmp/.keep
+tmp/*
+!tmp/.keep
+
+# Ignore macOS system files
+.DS_Store
+
