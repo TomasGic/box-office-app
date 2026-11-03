@@ -11,7 +11,12 @@
 # a separate helper file that requires the additional dependencies and performs
 # the additional setup, and require it from the spec files that actually need
 # it.
-#
+
+require_relative '../lib/box_office'
+
+# Recursively require all test helpers from the support directory
+Dir[File.join(__dir__, 'support/**/*.rb')].sort.each { |f| require f }
+
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
