@@ -9,5 +9,5 @@ tmp/*
 .DS_Store
 
 # Ignore spec/examples.txt
-spec/examples.txt
+tmp/examples.txt
 
