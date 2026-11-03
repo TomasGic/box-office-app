@@ -8,3 +8,6 @@ tmp/*
 # Ignore macOS system files
 .DS_Store
 
+# Ignore spec/examples.txt
+spec/examples.txt
+
