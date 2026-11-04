@@ -17,7 +17,7 @@
 require_relative '../lib/box_office'
 
 # Recursively require all test helpers from the support directory
-Dir[File.join(__dir__, 'support/**/*.rb')].sort.each { |f| require f }
+Dir[File.join(__dir__, 'support/**/*.rb')].each { |f| require f }
 
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
