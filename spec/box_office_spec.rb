@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe 'Test Suite Setup' do
   it 'successfully loads the application' do
     expect(defined?(BoxOffice)).to be_truthy
