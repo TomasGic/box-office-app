@@ -8,6 +8,25 @@ This project simulates a real box-office app for a small concert venue and is bu
 
 ## Setup
 ## Running the app
-## Running the tests
+
+## Running the Tests
+This project has been developed using TDD (Test Driven Development). It uses RSpec as the testing framework, configured with random test order to prevent state leakage between specs and verified partial doubles to prevent stubbing or mocking methods that do not exist on real objects. 
+
+To execute all tests at once run this command in the project root directory:
+```bash
+bundle exec rspec
+```
+
+To run a specific test file (spec), run the following command:
+```bash
+bundle exec rspec spec/box_office_spec.rb
+```
+
+### Replaying a failing seed
+Because RSpec randomizes the test execution order, every test run outputs the test results with a specific seed number, for example `Randomized with seed 41093`. The seed number makes it possible to replay the failing execution in that exact order with `bundle exec rspec --seed 41093`.
+
+## Replaying only failing tests
+In this project RSpec is configured to allow for running failing tests separately by running the command `bundle exec rspec --only-failures`. 
+
 ## Design decisions
 ## Known limitations
