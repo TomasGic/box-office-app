@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
-RSpec.describe 'Test Suite Setup' do
-  it 'successfully loads the application' do
-    expect(defined?(BoxOffice)).to be_truthy
-    expect(BoxOffice).to be_a(Module)
+RSpec.describe BoxOffice do
+  it 'is defined' do
+    expect(defined?(described_class)).to be_truthy
+  end
+
+  it 'is a module' do
+    expect(described_class).to be_a(Module)
   end
 
   it 'successfully loads files from the support folder' do
