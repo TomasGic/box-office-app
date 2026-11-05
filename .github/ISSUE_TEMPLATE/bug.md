@@ -1,3 +1,10 @@
+---
+name: Bug Report
+description: Create a bug report
+title: '[BUG] '
+labels: 'bug'
+---
+
 ## What happened
 
 ## What you expected
