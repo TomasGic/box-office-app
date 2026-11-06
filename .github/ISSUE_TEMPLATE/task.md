@@ -1,6 +1,6 @@
 ---
 name: Task Form
-description: Create a new task to be completed
+about: Create a new task to be completed
 title: '[TASK] '
 labels: 'task'
 ---
