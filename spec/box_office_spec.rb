@@ -1,8 +1,6 @@
-# frozen_string_literal: true
-
 RSpec.describe BoxOffice do
   it 'is defined' do
-    expect(defined?(described_class)).to be_falsy
+    expect(defined?(described_class)).to be_truthy
   end
 
   it 'is a module' do
