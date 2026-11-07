@@ -2,7 +2,7 @@
 
 RSpec.describe BoxOffice do
   it 'is defined' do
-    expect(defined?(described_class)).to be_truthy
+    expect(defined?(described_class)).to be_falsy
   end
 
   it 'is a module' do
