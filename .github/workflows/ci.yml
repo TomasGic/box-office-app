@@ -5,6 +5,10 @@ on:
     branches: [ "main" ]
   pull_request:
 
+# The GITHUB_TOKEN this jobs receives only needs a 'read' permission
+permissions:
+  contents: read
+
 jobs:
   test:
 
