@@ -66,3 +66,7 @@ CREATE TABLE order_items (
   event_seat_id INTEGER NOT NULL UNIQUE,
   FOREIGN KEY (event_seat_id) REFERENCES event_seats(id)
 );
+
+-- Create indexes on the foreign keys by which the app will query the most
+CREATE INDEX idx_event_seats_event_id ON event_seats(event_id);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
