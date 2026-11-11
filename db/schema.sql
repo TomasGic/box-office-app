@@ -63,7 +63,7 @@ CREATE TABLE orders (
 
 CREATE TABLE order_items (
   id INTEGER PRIMARY KEY,
-  order_id INTEGER NOT NULL
+  order_id INTEGER NOT NULL,
   event_seat_id INTEGER NOT NULL UNIQUE,
   FOREIGN KEY (order_id) REFERENCES orders(id),
   FOREIGN KEY (event_seat_id) REFERENCES event_seats(id)
