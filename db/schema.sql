@@ -37,6 +37,8 @@ CREATE TABLE event_seats (
   event_id INTEGER NOT NULL,
   seat_id INTEGER NOT NULL,
   status TEXT NOT NULL DEFAULT 'available',
+  hold_token VARCHAR(100),
+  held_until TIMESTAMP,
   FOREIGN KEY (event_id) REFERENCES events(id),
   FOREIGN KEY (seat_id) REFERENCES seats(id),
 
@@ -44,7 +46,14 @@ CREATE TABLE event_seats (
   UNIQUE (event_id, seat_id),
 
   -- check constraint to ensure status is only one of 'available', 'held', or 'sold'
-  CHECK(status IN ('available', 'held', 'sold'))
+  CHECK(status IN ('available', 'held', 'sold')),
+
+  -- check constraint to ensure event_seats with 'held' status have a hold_token and held_until
+  -- event_seats with status other than 'held' have neither
+  CHECK (
+    (status = 'held' AND (hold_token NOT NULL AND held_until NOT NULL)) OR
+    (status != 'held' AND (hold_token IS NULL AND held_until IS NULL))
+  )
 );
 
 CREATE TABLE promo_codes (
