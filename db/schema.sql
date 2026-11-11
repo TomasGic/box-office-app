@@ -65,6 +65,7 @@ CREATE TABLE order_items (
   id INTEGER PRIMARY KEY,
   order_id INTEGER NOT NULL,
   event_seat_id INTEGER NOT NULL UNIQUE,
+  price_cents INTEGER NOT NULL,
   FOREIGN KEY (order_id) REFERENCES orders(id),
   FOREIGN KEY (event_seat_id) REFERENCES event_seats(id)
 );
