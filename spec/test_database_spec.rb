@@ -5,20 +5,20 @@ RSpec.describe TestDatabase do
     described_class.connection.execute("INSERT INTO venues (name) VALUES ('#{name}');")
   end
 
-  def insert_section(name)
+  def insert_section(name:, venue:)
     described_class.connection.execute(
       "INSERT INTO sections (venue_id, name, price_cents) VALUES (
-        (SELECT id FROM venues WHERE name = 'Melkweg'), '#{name}', 4500
+        (SELECT id FROM venues WHERE name = '#{venue}'), '#{name}', 4500
       );"
     )
   end
 
-  def insert_event(name)
+  def insert_event(name:, venue:)
     described_class.connection.execute(
       "INSERT INTO events (name, starts_at, venue_id) VALUES (
         '#{name}',
         '2027-06-01 20:00:00',
-        (SELECT id FROM venues WHERE name = 'Melkweg')
+        (SELECT id FROM venues WHERE name = '#{venue}')
       )"
     )
   end
@@ -69,15 +69,12 @@ RSpec.describe TestDatabase do
   # Seats
   it 'rejects two identical combinations of seat_number and row_label within one section' do
     insert_venue('Melkweg')
-    insert_section('Balcony')
+    insert_section(name: 'Balcony', venue: 'Melkweg')
+    insert_seat(section: 'Balcony', row_label: 'A', number: 25)
 
-    query = "INSERT INTO seats (section_id, row_label, seat_number) VALUES (
-              (SELECT id FROM sections WHERE name = 'Balcony'), 'A', 25
-            );"
-    described_class.connection.execute(query)
-
+    # Inserting the same seat inside the same section again will raise error
     expect do
-      described_class.connection.execute(query)
+      insert_seat(section: 'Balcony', row_label: 'A', number: 25)
     end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
   end
 
@@ -93,29 +90,21 @@ RSpec.describe TestDatabase do
     end.to raise_error(SQLite3::ConstraintException, /FOREIGN KEY constraint failed/)
   end
 
-  context 'examples that require venues, sections, events and seats to contain some data' do
+  context 'when examples require venues, sections, events and seats to contain some data' do
     before do
       insert_venue('Melkweg')
-      insert_section('Balcony')
-      insert_event('Gojira World Tour 2027')
+      insert_section(name: 'Balcony', venue: 'Melkweg')
+      insert_event(name: 'Gojira World Tour 2027', venue: 'Melkweg')
       insert_seat(section: 'Balcony', row_label: 'A', number: 25)
     end
 
     # Event seats
     it 'rejects identical seat ids for the same event' do
-      # query inserting a new available seat for a particular event into event_seats
-      query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
-                  (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
-                  (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
-                  'available'
-              )"
-
-      # execute the query
-      described_class.connection.execute(query)
+      insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25)
 
       # we expect adding the same seat for the same event will raise error
       expect do
-        described_class.connection.execute(query)
+        insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25)
       end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
     end
 
@@ -147,14 +136,8 @@ RSpec.describe TestDatabase do
     end
 
     it 'rejects an event seat with an invalid status' do
-      # query inserting a new seat with invalid status for a particular event into event_seats
-      query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
-                  (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
-                  (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
-                  'invalid'
-              )"
       expect do
-        described_class.connection.execute(query)
+        insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25, status: 'invalid')
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
     end
   end
@@ -216,8 +199,8 @@ RSpec.describe TestDatabase do
   # Order items
   it 'rejects the same event_seat_id for two different orders' do
     insert_venue('Melkweg')
-    insert_section('Balcony')
-    insert_event('Gojira World Tour 2027')
+    insert_section(name: 'Balcony', venue: 'Melkweg')
+    insert_event(name: 'Gojira World Tour 2027', venue: 'Melkweg')
     insert_seat(section: 'Balcony', row_label: 'A', number: 25)
     insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25)
     insert_order(buyer_email: 'tomas.gic@example.com', price: 4500, transaction_id: '1234abcd')
