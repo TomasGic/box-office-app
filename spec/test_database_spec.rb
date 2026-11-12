@@ -13,7 +13,7 @@ RSpec.describe TestDatabase do
     )
   end
 
-  def insert_event(name = 'Gojira World Tour 2027')
+  def insert_event(name)
     described_class.connection.execute(
       "INSERT INTO events (name, starts_at, venue_id) VALUES (
         '#{name}',
@@ -31,6 +31,22 @@ RSpec.describe TestDatabase do
               #{number}
             );"
     )
+  end
+
+  def insert_event_seat(event:, row_label:, seat_number:, status: 'available')
+    query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
+                  (SELECT id FROM events WHERE name = '#{event}'),
+                  (SELECT id FROM seats WHERE row_label = '#{row_label}' AND seat_number = #{seat_number}),
+                  '#{status}'
+              )"
+    described_class.connection.execute(query)
+  end
+
+  def insert_order(buyer_email:, price:, transaction_id:)
+    query = "INSERT INTO orders (buyer_email, total_cents, gateway, transaction_id)
+            VALUES ('#{buyer_email}', #{price}, 'paypal', '#{transaction_id}');"
+
+    described_class.connection.execute(query)
   end
   # Venues
   it 'rejects a venue name that is NULL' do
@@ -141,5 +157,89 @@ RSpec.describe TestDatabase do
         described_class.connection.execute(query)
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
     end
+  end
+
+  # Promo codes
+  it 'rejects the same code inserted twice' do
+    query = "INSERT INTO promo_codes(code, percent_off) VALUES ('123456abcdef', 50);"
+
+    described_class.connection.execute(query)
+
+    expect do
+      described_class.connection.execute(query)
+    end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
+  end
+
+  it 'rejects percent_off value of 0' do
+    query = "INSERT INTO promo_codes(code, percent_off) VALUES ('123456abcdef', 0);"
+
+    expect do
+      described_class.connection.execute(query)
+    end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+  end
+
+  it 'rejects percent_off value of 101' do
+    query = "INSERT INTO promo_codes(code, percent_off) VALUES ('123456abcdef', 101);"
+
+    expect do
+      described_class.connection.execute(query)
+    end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+  end
+
+  it 'accepts percent_off value of 100' do
+    query = "INSERT INTO promo_codes(code, percent_off) VALUES ('123456abcdef', 100);"
+
+    expect do
+      described_class.connection.execute(query)
+    end.not_to raise_error
+  end
+
+  # orders
+  it 'rejects an order with negative total_cents' do
+    query = "INSERT INTO orders (buyer_email, total_cents, gateway, transaction_id)
+            VALUES ('tomas.gic@example.com', -4500, 'paypal', '123456abdefg');"
+
+    expect do
+      described_class.connection.execute(query)
+    end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+  end
+
+  it 'accepts an order with total_cents of 0' do
+    query = "INSERT INTO orders (buyer_email, total_cents, gateway, transaction_id)
+            VALUES ('tomas.gic@example.com', 0, 'paypal', '123456abdefg');"
+
+    expect do
+      described_class.connection.execute(query)
+    end.not_to raise_error
+  end
+
+  # Order items
+  it 'rejects the same event_seat_id for two different orders' do
+    insert_venue('Melkweg')
+    insert_section('Balcony')
+    insert_event('Gojira World Tour 2027')
+    insert_seat(section: 'Balcony', row_label: 'A', number: 25)
+    insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25)
+    insert_order(buyer_email: 'tomas.gic@example.com', price: 4500, transaction_id: '1234abcd')
+    insert_order(buyer_email: 'lukas.rohac@example.com', price: 4500, transaction_id: '9876xyzt')
+
+    query1 = "INSERT INTO order_items (order_id, event_seat_id, price_cents)
+              VALUES (
+              (SELECT id FROM orders WHERE buyer_email = 'tomas.gic@example.com'),
+              (SELECT id FROM event_seats where event_id = (SELECT id FROM events WHERE name = 'Gojira World Tour 2027')),
+              4500
+              );"
+    query2 = "INSERT INTO order_items (order_id, event_seat_id, price_cents)
+              VALUES (
+              (SELECT id FROM orders WHERE buyer_email = 'lukas.rohac@example.com'),
+              (SELECT id FROM event_seats where event_id = (SELECT id FROM events WHERE name = 'Gojira World Tour 2027')),
+              4500
+              );"
+
+    described_class.connection.execute(query1)
+
+    expect do
+      described_class.connection.execute(query2)
+    end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
   end
 end
