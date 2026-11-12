@@ -33,14 +33,14 @@ RSpec.describe TestDatabase do
     )
   end
   # Venues
-  it 'enforces that venue name cannot be NULL' do
+  it 'rejects a venue name that is NULL' do
     expect do
       described_class.connection.execute('INSERT INTO venues (name) VALUES (NULL);')
     end.to raise_error(SQLite3::ConstraintException)
   end
 
   # Sections
-  it 'enforces that price_cents in sections cannot be less then 0' do
+  it 'rejects a price that is negative' do
     insert_venue('Melkweg')
 
     expect do
@@ -51,7 +51,7 @@ RSpec.describe TestDatabase do
   end
 
   # Seats
-  it 'enforces unique combination of seat_number and row_label within one section' do
+  it 'rejects two identical combinations of seat_number and row_label within one section' do
     insert_venue('Melkweg')
     insert_section('Balcony')
 
@@ -66,7 +66,7 @@ RSpec.describe TestDatabase do
   end
 
   #  Events
-  it 'enforces the foreign key constraint on venue_id in events' do
+  it 'rejects an event with non-existent venue_id' do
     query = "INSERT INTO events (name, starts_at, venue_id) VALUES (
               'Gojira World Tour 2027',
               '2027-06-01 20:00:00',
@@ -85,7 +85,8 @@ RSpec.describe TestDatabase do
       insert_seat(section: 'Balcony', row_label: 'A', number: 25)
     end
 
-    it 'enforces that the combination of event_id and seat_id is unique' do
+    # Event seats
+    it 'rejects identical seat ids for the same event' do
       # query inserting a new available seat for a particular event into event_seats
       query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
                   (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
@@ -102,7 +103,6 @@ RSpec.describe TestDatabase do
       end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
     end
 
-    # Event_seats
     it 'enforces that event_seat with held status have a hold_token and held_until not null' do
       # query inserting a new held seat for a particular event into event_seats
       query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
@@ -111,13 +111,26 @@ RSpec.describe TestDatabase do
                   'held'
               )"
 
-      # Inserting a seat with 'held' status and no hold_token and held_until will raise error
+      # Inserting a seat with 'held' status and no hold_token and no held_until will raise error
       expect do
         described_class.connection.execute(query)
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
     end
 
-    it "enforces that status can only be 'available', 'held' or 'sold'" do
+    it 'enforces that event seat with available status and a hold_token is rejected' do
+      # query inserting a new available seat with a hold_token
+      query = "INSERT INTO event_seats (event_id, seat_id, status, hold_token) VALUES (
+                  (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
+                  (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
+                  'available',
+                  'xxxxxxxxxxxxxxxxxxxxxxxxx'
+              )"
+      expect do
+        described_class.connection.execute(query)
+      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+    end
+
+    it 'rejects an event seat with an invalid status' do
       # query inserting a new seat with invalid status for a particular event into event_seats
       query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
                   (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
