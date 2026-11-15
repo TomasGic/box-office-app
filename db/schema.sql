@@ -46,11 +46,11 @@ CREATE TABLE event_seats (
   UNIQUE (event_id, seat_id),
 
   -- check constraint to ensure status is only one of 'available', 'held', or 'sold'
-  CHECK(status IN ('available', 'held', 'sold')),
+  CONSTRAINT valid_status CHECK(status IN ('available', 'held', 'sold')),
 
   -- check constraint to ensure event_seats with 'held' status have a hold_token and held_until
   -- event_seats with status other than 'held' have neither
-  CHECK (
+  CONSTRAINT valid_held_tokens CHECK (
     (status = 'held' AND (hold_token NOT NULL AND held_until NOT NULL)) OR
     (status != 'held' AND (hold_token IS NULL AND held_until IS NULL))
   )
