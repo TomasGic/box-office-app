@@ -17,13 +17,29 @@ RSpec.describe 'db/schema.sql' do
 
       expect do
         db.execute(
-          'INSERT INTO sections (venue_id, name, price_cents) VALUES (1, "Balcony", -10);'
+          'INSERT INTO sections (venue_id, name, price_cents) VALUES (999, "Balcony", -80);'
         )
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: price_cents > 0/)
+    end
+
+    it 'rejects a section with non-existent venue_id' do
+      expect do
+        db.execute(
+          'INSERT INTO sections (venue_id, name, price_cents) VALUES (999, "Balcony", 80);'
+        )
+      end.to raise_error(SQLite3::ConstraintException, /FOREIGN KEY constraint failed/)
     end
   end
 
   describe 'seats' do
+    it 'rejects a seat with a non-existent section_id' do
+      expect do
+        db.execute(
+          "INSERT INTO seats (section_id, row_label, seat_number) VALUES (999, 'A', 25);"
+        )
+      end.to raise_error(SQLite3::ConstraintException, /FOREIGN KEY constraint failed/)
+    end
+
     it 'rejects two identical combinations of seat_number and row_label within one section' do
       insert_venue('Melkweg')
       insert_section(name: 'Balcony', venue: 'Melkweg')
@@ -43,6 +59,21 @@ RSpec.describe 'db/schema.sql' do
       expect do
         db.execute(query)
       end.to raise_error(SQLite3::ConstraintException, /FOREIGN KEY constraint failed/)
+    end
+
+    it 'rejects an event without a name' do
+      insert_venue('Melkweg')
+      expect do
+        insert_event(venue: 'Melkweg', name: nil)
+      end.to raise_error(SQLite3::ConstraintException, /NOT NULL constraint failed/)
+    end
+
+    it 'rejects an event with no starting time' do
+      insert_venue('Melkweg')
+
+      expect do
+        insert_event(name: 'Gojira World Tour 2027', venue: 'Melkweg', start_time: nil)
+      end.to raise_error(SQLite3::ConstraintException, /NOT NULL constraint failed/)
     end
   end
 
@@ -102,41 +133,39 @@ RSpec.describe 'db/schema.sql' do
 
   describe 'promo codes' do
     it 'rejects the same promo code inserted twice' do
-      query = "INSERT INTO promo_codes(code, percent_off) VALUES ('123456abcdef', 50);"
-
-      db.execute(query)
+      insert_promo_code(code: '123456abcdef', percent_off: 50)
 
       expect do
-        db.execute(query)
+        insert_promo_code(code: '123456abcdef', percent_off: 80)
       end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
     end
   end
 
   it 'rejects percent_off value of 0' do
-    query = "INSERT INTO promo_codes(code, percent_off) VALUES ('123456abcdef', 0);"
-
     expect do
-      db.execute(query)
+      insert_promo_code(percent_off: 0)
     end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
   end
 
   it 'rejects percent_off value of 101' do
-    query = "INSERT INTO promo_codes(code, percent_off) VALUES ('123456abcdef', 101);"
-
     expect do
-      db.execute(query)
+      insert_promo_code(percent_off: 101)
     end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
   end
 
   it 'accepts percent_off value of 100' do
-    query = "INSERT INTO promo_codes(code, percent_off) VALUES ('123456abcdef', 100);"
-
     expect do
-      db.execute(query)
+      insert_promo_code(percent_off: 100)
     end.not_to raise_error
   end
 
   describe 'orders' do
+    it 'rejects an order with no buyer email' do
+      expect do
+        insert_order(buyer_email: nil, price: 4500, transaction_id: '45454jkku')
+      end.to raise_error(SQLite3::ConstraintException, /NOT NULL constraint failed/)
+    end
+
     it 'rejects an order with negative total_cents' do
       expect do
         insert_order(buyer_email: 'tomas.gic@example.com', price: -4500, transaction_id: '123456abdefg')
