@@ -21,13 +21,13 @@ RSpec.shared_context 'with a schema database' do
     )
   end
 
-  def insert_event(name:, venue:)
+  def insert_event(venue:, name:, start_time: '2027-06-01 20:00:00')
     db.execute(
-      "INSERT INTO events (name, starts_at, venue_id) VALUES (
-        '#{name}',
-        '2027-06-01 20:00:00',
-        (SELECT id FROM venues WHERE name = '#{venue}')
-      )"
+      "INSERT INTO events (name, starts_at, venue_id) VALUES (?,
+        ?,
+        (SELECT id FROM venues WHERE name = ?)
+      );",
+      [name, start_time, venue]
     )
   end
 
@@ -50,11 +50,16 @@ RSpec.shared_context 'with a schema database' do
     db.execute(query)
   end
 
-  def insert_order(buyer_email:, price:, transaction_id:)
-    query = "INSERT INTO orders (buyer_email, total_cents, gateway, transaction_id)
-            VALUES ('#{buyer_email}', #{price}, 'paypal', '#{transaction_id}');"
+  def insert_promo_code(percent_off:, code: '123456abcdef')
+    db.execute("INSERT INTO promo_codes (code, percent_off)
+              VALUES (?, ?);", [code, percent_off])
+  end
 
-    db.execute(query)
+  def insert_order(buyer_email:, price:, transaction_id:)
+    db.execute(
+      "INSERT INTO orders (buyer_email, total_cents, gateway, transaction_id) VALUES (?, ?, 'paypal', ?);",
+      [buyer_email, price, transaction_id]
+    )
   end
 
   def insert_order_item(buyer_email:, event:, price_cents:)
