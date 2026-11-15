@@ -7,3 +7,14 @@ AllCops:
   Exclude:
     - 'vendor/**/*'
     - 'tmp/**/*'
+
+# Update maximum example length to 10 lines
+# Reason: more space for longer SQL queries and insertions
+RSpec/ExampleLength:
+  Max: 10
+
+# Disable the cop for the spec file below
+# Reason: the spec is testing the database schema, and not a specific class or module
+RSpec/DescribeClass:
+  Exclude:
+    - 'spec/schema_spec.rb'
