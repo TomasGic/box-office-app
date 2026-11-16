@@ -17,7 +17,7 @@ RSpec.describe 'db/schema.sql' do
 
       expect do
         db.execute(
-          'INSERT INTO sections (venue_id, name, price_cents) VALUES (999, "Balcony", -80);'
+          'INSERT INTO sections (venue_id, name, price_cents) VALUES (1, "Balcony", -80);'
         )
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: price_cents > 0/)
     end
@@ -96,19 +96,11 @@ RSpec.describe 'db/schema.sql' do
       end
     end
 
-    it 'enforces that event_seat with held status have a hold_token and held_until' do
-      # Statement inserting a new held seat for a particular event without hold_token
-      # and without held_until
-      query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
-                  (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
-                  (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
-                  'held'
-              )"
-
+    it 'rejects an event seat with held status, but no hold_token and held_until' do
       # Inserting a seat with 'held' status and without hold_token and held_until will raise error
       expect do
-        db.execute(query)
-      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+        insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25, status: 'held')
+      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
     end
 
     it 'enforces that event seat with available status and a hold_token is rejected' do
@@ -117,17 +109,30 @@ RSpec.describe 'db/schema.sql' do
                   (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
                   (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
                   'available',
-                  'xxxxxxxxxxxxxxxxxxxxxxxxx'
+                  'ekjjf7886eikiiip998kj76'
               )"
       expect do
         db.execute(query)
-      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
     end
 
     it 'rejects an event seat with an invalid status' do
       expect do
         insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25, status: 'invalid')
-      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_status/)
+    end
+
+    describe 'order items' do
+      it 'rejects the same event_seat_id for two different orders' do
+        insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25)
+        insert_order(buyer_email: 'tomas.gic@example.com', price: 4500, transaction_id: '1234abcd')
+        insert_order(buyer_email: 'lukas.rohac@example.com', price: 4500, transaction_id: '9876xyzt')
+        insert_order_item(buyer_email: 'tomas.gic@example.com', event: 'Gojira World Tour 2027', price_cents: 4500)
+
+        expect do
+          insert_order_item(buyer_email: 'lukas.rohac@example.com', event: 'Gojira World Tour 2027', price_cents: 4500)
+        end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
+      end
     end
   end
 
@@ -177,23 +182,5 @@ RSpec.describe 'db/schema.sql' do
     expect do
       insert_order(buyer_email: 'tomas.gic@example.com', price: 0, transaction_id: '123456abdefg')
     end.not_to raise_error
-  end
-
-  describe 'order items' do
-    it 'rejects the same event_seat_id for two different orders' do
-      insert_venue('Melkweg')
-      insert_section(name: 'Balcony', venue: 'Melkweg')
-      insert_event(name: 'Gojira World Tour 2027', venue: 'Melkweg')
-      insert_seat(section: 'Balcony', row_label: 'A', number: 25)
-      insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25)
-      insert_order(buyer_email: 'tomas.gic@example.com', price: 4500, transaction_id: '1234abcd')
-      insert_order(buyer_email: 'lukas.rohac@example.com', price: 4500, transaction_id: '9876xyzt')
-
-      insert_order_item(buyer_email: 'tomas.gic@example.com', event: 'Gojira World Tour 2027', price_cents: 4500)
-
-      expect do
-        insert_order_item(buyer_email: 'lukas.rohac@example.com', event: 'Gojira World Tour 2027', price_cents: 4500)
-      end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
-    end
   end
 end
