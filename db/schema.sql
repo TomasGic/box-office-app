@@ -1,3 +1,5 @@
+-- In SQLite foreign key constraints are disabled by default.
+-- In order for the foreign key definitions in this file to be enforced, this setting has to turned on.
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE venues (
