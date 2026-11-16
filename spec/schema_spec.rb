@@ -29,6 +29,15 @@ RSpec.describe 'db/schema.sql' do
         )
       end.to raise_error(SQLite3::ConstraintException, /FOREIGN KEY constraint failed/)
     end
+
+    it 'rejects deletion of a venue that still has valid sections' do
+      insert_venue('Melkweg')
+      insert_section(name: 'Balcony', venue: 'Melkweg')
+
+      expect do
+        db.execute("DELETE FROM venues WHERE name = 'Melkweg';")
+      end.to raise_error(SQLite3::ConstraintException, /FOREIGN KEY constraint failed/)
+    end
   end
 
   describe 'seats' do
