@@ -16,7 +16,7 @@ RSpec.shared_context 'with a schema database' do
   def insert_section(name:, venue:)
     db.execute(
       "INSERT INTO sections (venue_id, name, price_cents) VALUES (
-        (SELECT id FROM venues WHERE name = '#{venue}'), '#{name}', 4500
+      (SELECT id FROM venues WHERE name = '#{venue}'), '#{name}', 4500
       );"
     )
   end
@@ -24,8 +24,8 @@ RSpec.shared_context 'with a schema database' do
   def insert_event(venue:, name:, start_time: '2027-06-01 20:00:00')
     db.execute(
       "INSERT INTO events (name, starts_at, venue_id) VALUES (?,
-        ?,
-        (SELECT id FROM venues WHERE name = ?)
+      ?,
+      (SELECT id FROM venues WHERE name = ?)
       );",
       [name, start_time, venue]
     )
@@ -34,19 +34,19 @@ RSpec.shared_context 'with a schema database' do
   def insert_seat(section:, row_label:, number:)
     db.execute(
       "INSERT INTO seats (section_id, row_label, seat_number) VALUES (
-              (SELECT id FROM sections WHERE name = '#{section}'),
-              '#{row_label}',
-              #{number}
-            );"
+      (SELECT id FROM sections WHERE name = '#{section}'),
+      '#{row_label}',
+      #{number}
+      );"
     )
   end
 
   def insert_event_seat(event:, row_label:, seat_number:, status: 'available')
     query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
-                  (SELECT id FROM events WHERE name = '#{event}'),
-                  (SELECT id FROM seats WHERE row_label = '#{row_label}' AND seat_number = #{seat_number}),
-                  '#{status}'
-              )"
+            (SELECT id FROM events WHERE name = '#{event}'),
+            (SELECT id FROM seats WHERE row_label = '#{row_label}' AND seat_number = #{seat_number}),
+            '#{status}'
+            )"
     db.execute(query)
   end
 
@@ -64,11 +64,11 @@ RSpec.shared_context 'with a schema database' do
 
   def insert_order_item(buyer_email:, event:, price_cents:)
     query = "INSERT INTO order_items (order_id, event_seat_id, price_cents)
-                VALUES (
-                (SELECT id FROM orders WHERE buyer_email = '#{buyer_email}'),
-                  (SELECT id FROM event_seats where event_id = (SELECT id FROM events WHERE name = '#{event}')),
-                #{price_cents}
-              );"
+            VALUES (
+            (SELECT id FROM orders WHERE buyer_email = '#{buyer_email}'),
+            (SELECT id FROM event_seats where event_id = (SELECT id FROM events WHERE name = '#{event}')),
+            #{price_cents}
+            );"
 
     db.execute(query)
   end
