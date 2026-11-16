@@ -47,7 +47,7 @@ CREATE TABLE event_seats (
   FOREIGN KEY (event_id) REFERENCES events(id),
   FOREIGN KEY (seat_id) REFERENCES seats(id),
 
-  -- Unique constraint ensures that the a physical seat (seat_id) can only be sold once for the same event.
+  -- Unique constraint ensures that a physical seat (seat_id) can only be sold once for the same event.
   -- However, the same seat id can be sold for different events
   UNIQUE (event_id, seat_id),
 
