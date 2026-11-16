@@ -13,6 +13,7 @@ CREATE TABLE sections (
   FOREIGN KEY (venue_id) REFERENCES venues(id)
 );
 
+-- This is the table containing physical seats of the venue
 CREATE TABLE seats (
   id INTEGER PRIMARY KEY,
   section_id INTEGER NOT NULL,
@@ -20,7 +21,7 @@ CREATE TABLE seats (
   seat_number INTEGER NOT NULL,
   FOREIGN KEY (section_id) REFERENCES sections(id),
 
-  -- combination of row_label and seat_number should be unique for each section
+  -- Combination of row_label and seat_number should be unique for each section
   UNIQUE (section_id, row_label, seat_number)
 );
 
@@ -32,6 +33,10 @@ CREATE TABLE events (
   FOREIGN KEY (venue_id) REFERENCES venues(id)
 );
 
+
+-- This is the table containing seats for a specific event.
+-- An event seat is separate from the physical seat.
+-- The table references the physical seat by a foreign key (seat_id)
 CREATE TABLE event_seats (
   id INTEGER PRIMARY KEY,
   event_id INTEGER NOT NULL,
@@ -42,14 +47,15 @@ CREATE TABLE event_seats (
   FOREIGN KEY (event_id) REFERENCES events(id),
   FOREIGN KEY (seat_id) REFERENCES seats(id),
 
-  -- only one unique seat_id per event
+  -- Unique constraint ensures that the a physical seat (seat_id) can only be sold once for the same event.
+  -- However, the same seat id can be sold for different events
   UNIQUE (event_id, seat_id),
 
-  -- check constraint to ensure status is only one of 'available', 'held', or 'sold'
+  -- Check constraint to ensure status is only one of 'available', 'held', or 'sold'
   CONSTRAINT valid_status CHECK(status IN ('available', 'held', 'sold')),
 
-  -- check constraint to ensure event_seats with 'held' status have a hold_token and held_until
-  -- event_seats with status other than 'held' have neither
+  -- Check constraint to ensure event_seats with 'held' status have a hold_token and held_until.
+  -- Event_seats with status other than 'held' have neither hold_token nor held_until.
   CONSTRAINT valid_held_tokens CHECK (
     (status = 'held' AND (hold_token NOT NULL AND held_until NOT NULL)) OR
     (status != 'held' AND (hold_token IS NULL AND held_until IS NULL))
