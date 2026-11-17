@@ -13,11 +13,12 @@ RSpec.shared_context 'with a schema database' do
     db.execute("INSERT INTO venues (name) VALUES ('#{name}');")
   end
 
-  def insert_section(name:, venue:)
+  def insert_section(name:, venue:, price: 4500)
     db.execute(
       "INSERT INTO sections (venue_id, name, price_cents) VALUES (
-      (SELECT id FROM venues WHERE name = '#{venue}'), '#{name}', 4500
-      );"
+      (SELECT id FROM venues WHERE name = ?), ?, ?
+      );",
+      [venue, name, price]
     )
   end
 
@@ -48,6 +49,19 @@ RSpec.shared_context 'with a schema database' do
             '#{status}'
             )"
     db.execute(query)
+  end
+
+  def insert_held_event_seat(event:, row_label:, seat_number:, hold_token:, held_until:)
+    db.execute(
+      "INSERT INTO event_seats(event_id, seat_id, status, hold_token, held_until) VALUES (
+      (SELECT id FROM events WHERE name = ?),
+      (SELECT id FROM seats WHERE row_label = ? AND seat_number = ?),
+      'held',
+      ?,
+      ?
+      )",
+      [event, row_label, seat_number, hold_token, held_until]
+    )
   end
 
   def insert_promo_code(percent_off:, code: '123456abcdef')
