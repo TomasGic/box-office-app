@@ -130,69 +130,69 @@ RSpec.describe 'db/schema.sql' do
           insert_event_seat(event: 'Gojira World Tour 2027 (night 2)', row_label: 'A', seat_number: 25)
         end.not_to raise_error
       end
-    end
 
-    it 'rejects an event seat with held status, but no hold_token and held_until' do
-      # Inserting a seat with 'held' status and without hold_token and held_until will raise error
-      expect do
-        insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25, status: 'held')
-      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
-    end
+      it 'rejects an event seat with held status, but no hold_token and held_until' do
+        # Inserting a seat with 'held' status and without hold_token and held_until will raise error
+        expect do
+          insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25, status: 'held')
+        end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
+      end
 
-    it 'rejects a seat with available status and a hold_token' do
-      # query inserting a new available seat with a hold_token
-      query = "INSERT INTO event_seats (event_id, seat_id, status, hold_token) VALUES (
-                  (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
-                  (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
-                  'available',
-                  'ekjjf7886eikiiip998kj76'
-              )"
-      expect do
-        db.execute(query)
-      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
-    end
+      it 'rejects a seat with available status and a hold_token' do
+        # query inserting a new available seat with a hold_token
+        query = "INSERT INTO event_seats (event_id, seat_id, status, hold_token) VALUES (
+                    (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
+                    (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
+                    'available',
+                    'ekjjf7886eikiiip998kj76'
+                )"
+        expect do
+          db.execute(query)
+        end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
+      end
 
-    it 'rejects a seat with available status and with held_until' do
-      # query inserting a new available seat with held_until
-      query = "INSERT INTO event_seats (event_id, seat_id, status, held_until) VALUES (
-                  (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
-                  (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
-                  'available',
-                  '2027-06-01 20:00:00'
-              )"
-      expect do
-        db.execute(query)
-      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
-    end
+      it 'rejects a seat with available status and with held_until' do
+        # query inserting a new available seat with held_until
+        query = "INSERT INTO event_seats (event_id, seat_id, status, held_until) VALUES (
+                    (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
+                    (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
+                    'available',
+                    '2027-06-01 20:00:00'
+                )"
+        expect do
+          db.execute(query)
+        end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
+      end
 
-    it 'rejects an event seat with an invalid status' do
-      expect do
-        insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25, status: 'invalid')
-      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_status/)
-    end
+      it 'rejects an event seat with an invalid status' do
+        expect do
+          insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25, status: 'invalid')
+        end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_status/)
+      end
 
-    it 'rejects a held event seat with a valid hold_token, but with no held_until' do
-      expect do
-        insert_held_event_seat(
-          event: 'Gojira World Tour 2027',
-          row_label: 'A',
-          seat_number: 25,
-          hold_token: '12345abcdef',
-          held_until: nil
-        )
-      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
-    end
+      it 'rejects a held event seat with a valid hold_token, but with no held_until' do
+        expect do
+          insert_held_event_seat(
+            event: 'Gojira World Tour 2027',
+            row_label: 'A',
+            seat_number: 25,
+            hold_token: '12345abcdef',
+            held_until: nil
+          )
+        end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
+      end
 
-    it 'accepts a held seat with hold_token and held_until' do
-      expect do
-        insert_held_event_seat(
-          event: 'Gojira World Tour 2027',
-          row_label: 'A',
-          seat_number: 25,
-          hold_token: '12345abcdef',
-          held_until: '2027-06-01 20:00:00'
-        )
-      end.not_to raise_error
+      it 'accepts a held seat with hold_token and held_until' do
+        expect do
+          insert_held_event_seat(
+            event: 'Gojira World Tour 2027',
+            row_label: 'A',
+            seat_number: 25,
+            hold_token: '12345abcdef',
+            held_until: '2027-06-01 20:00:00'
+          )
+        end.not_to raise_error
+      end
     end
 
     describe 'order items' do
@@ -217,24 +217,24 @@ RSpec.describe 'db/schema.sql' do
         insert_promo_code(code: '123456abcdef', percent_off: 80)
       end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
     end
-  end
 
-  it 'rejects percent_off value of 0' do
-    expect do
-      insert_promo_code(percent_off: 0)
-    end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
-  end
+    it 'rejects percent_off value of 0' do
+      expect do
+        insert_promo_code(percent_off: 0)
+      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+    end
 
-  it 'rejects percent_off value of 101' do
-    expect do
-      insert_promo_code(percent_off: 101)
-    end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
-  end
+    it 'rejects percent_off value of 101' do
+      expect do
+        insert_promo_code(percent_off: 101)
+      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
+    end
 
-  it 'accepts percent_off value of 100' do
-    expect do
-      insert_promo_code(percent_off: 100)
-    end.not_to raise_error
+    it 'accepts percent_off value of 100' do
+      expect do
+        insert_promo_code(percent_off: 100)
+      end.not_to raise_error
+    end
   end
 
   describe 'orders' do
