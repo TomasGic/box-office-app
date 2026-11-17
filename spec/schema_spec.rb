@@ -30,6 +30,14 @@ RSpec.describe 'db/schema.sql' do
       end.to raise_error(SQLite3::ConstraintException, /FOREIGN KEY constraint failed/)
     end
 
+    it 'rejects a section without a price' do
+      insert_venue('Melkweg')
+
+      expect do
+        insert_section(name: 'Balcony', venue: 'Melkweg', price: nil)
+      end.to raise_error(SQLite3::ConstraintException, /NOT NULL constraint failed: sections.price_cents/)
+    end
+
     it 'rejects deletion of a venue that still has valid sections' do
       insert_venue('Melkweg')
       insert_section(name: 'Balcony', venue: 'Melkweg')
@@ -58,6 +66,17 @@ RSpec.describe 'db/schema.sql' do
       expect do
         insert_seat(section: 'Balcony', row_label: 'A', number: 25)
       end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
+    end
+
+    it 'accepts two identical combinations of seat_number and row_label in two different sections' do
+      insert_venue('Melkweg')
+      insert_section(name: 'Balcony', venue: 'Melkweg')
+      insert_section(name: 'VIP', venue: 'Melkweg')
+      insert_seat(section: 'Balcony', row_label: 'A', number: 25)
+
+      expect do
+        insert_seat(section: 'VIP', row_label: 'A', number: 25)
+      end.not_to raise_error
     end
   end
 
@@ -103,6 +122,14 @@ RSpec.describe 'db/schema.sql' do
           insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25)
         end.to raise_error(SQLite3::ConstraintException, /UNIQUE constraint failed/)
       end
+
+      it 'accepts two event seats with the same physical seat id but different event ids' do
+        insert_event(name: 'Gojira World Tour 2027 (night 2)', venue: 'Melkweg')
+
+        expect do
+          insert_event_seat(event: 'Gojira World Tour 2027 (night 2)', row_label: 'A', seat_number: 25)
+        end.not_to raise_error
+      end
     end
 
     it 'rejects an event seat with held status, but no hold_token and held_until' do
@@ -112,7 +139,7 @@ RSpec.describe 'db/schema.sql' do
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
     end
 
-    it 'enforces that event seat with available status and a hold_token is rejected' do
+    it 'rejects a seat with available status and a hold_token' do
       # query inserting a new available seat with a hold_token
       query = "INSERT INTO event_seats (event_id, seat_id, status, hold_token) VALUES (
                   (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
@@ -125,10 +152,47 @@ RSpec.describe 'db/schema.sql' do
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
     end
 
+    it 'rejects a seat with available status and with held_until' do
+      # query inserting a new available seat with held_until
+      query = "INSERT INTO event_seats (event_id, seat_id, status, held_until) VALUES (
+                  (SELECT id FROM events WHERE name = 'Gojira World Tour 2027'),
+                  (SELECT id FROM seats WHERE row_label = 'A' AND seat_number = 25),
+                  'available',
+                  '2027-06-01 20:00:00'
+              )"
+      expect do
+        db.execute(query)
+      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
+    end
+
     it 'rejects an event seat with an invalid status' do
       expect do
         insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25, status: 'invalid')
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_status/)
+    end
+
+    it 'rejects a held event seat with a valid hold_token, but with no held_until' do
+      expect do
+        insert_held_event_seat(
+          event: 'Gojira World Tour 2027',
+          row_label: 'A',
+          seat_number: 25,
+          hold_token: '12345abcdef',
+          held_until: nil
+        )
+      end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed: valid_held_tokens/)
+    end
+
+    it 'accepts a held seat with hold_token and held_until' do
+      expect do
+        insert_held_event_seat(
+          event: 'Gojira World Tour 2027',
+          row_label: 'A',
+          seat_number: 25,
+          hold_token: '12345abcdef',
+          held_until: '2027-06-01 20:00:00'
+        )
+      end.not_to raise_error
     end
 
     describe 'order items' do
