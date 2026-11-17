@@ -1,5 +1,5 @@
--- In SQLite foreign key constraints are disabled by default.
--- In order for the foreign key definitions in this file to be enforced, this setting has to turned on.
+-- SQLite ignores foreign keys unless this is on, and the setting belongs to the connection, not to the file.
+-- It applies to whoever runs this file; every other connection that writes has to turn it on again.
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE venues (
