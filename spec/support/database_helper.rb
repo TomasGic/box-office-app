@@ -10,7 +10,7 @@ RSpec.shared_context 'with a schema database' do
   end
 
   def insert_venue(name)
-    db.execute("INSERT INTO venues (name) VALUES ('#{name}');")
+    db.execute('INSERT INTO venues (name) VALUES (?);', [name])
   end
 
   def insert_section(name:, venue:, price: 4500)
@@ -35,20 +35,21 @@ RSpec.shared_context 'with a schema database' do
   def insert_seat(section:, row_label:, number:)
     db.execute(
       "INSERT INTO seats (section_id, row_label, seat_number) VALUES (
-      (SELECT id FROM sections WHERE name = '#{section}'),
-      '#{row_label}',
-      #{number}
-      );"
+      (SELECT id FROM sections WHERE name = ?), ?, ?
+      );",
+      [section, row_label, number]
     )
   end
 
   def insert_event_seat(event:, row_label:, seat_number:, status: 'available')
-    query = "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
-            (SELECT id FROM events WHERE name = '#{event}'),
-            (SELECT id FROM seats WHERE row_label = '#{row_label}' AND seat_number = #{seat_number}),
-            '#{status}'
-            )"
-    db.execute(query)
+    db.execute(
+      "INSERT INTO event_seats (event_id, seat_id, status) VALUES (
+      (SELECT id FROM events WHERE name = ?),
+      (SELECT id FROM seats WHERE row_label = ? AND seat_number = ?),
+      ?
+      );",
+      [event, row_label, seat_number, status]
+    )
   end
 
   def insert_held_event_seat(event:, row_label:, seat_number:, hold_token:, held_until:)
@@ -77,13 +78,14 @@ RSpec.shared_context 'with a schema database' do
   end
 
   def insert_order_item(buyer_email:, event:, price_cents:)
-    query = "INSERT INTO order_items (order_id, event_seat_id, price_cents)
-            VALUES (
-            (SELECT id FROM orders WHERE buyer_email = '#{buyer_email}'),
-            (SELECT id FROM event_seats where event_id = (SELECT id FROM events WHERE name = '#{event}')),
-            #{price_cents}
-            );"
-
-    db.execute(query)
+    db.execute(
+      "INSERT INTO order_items (order_id, event_seat_id, price_cents)
+      VALUES (
+      (SELECT id FROM orders WHERE buyer_email = ?),
+      (SELECT id FROM event_seats where event_id = (SELECT id FROM events WHERE name = ?)),
+      ?
+      );",
+      [buyer_email, event, price_cents]
+    )
   end
 end
