@@ -36,9 +36,9 @@ CREATE TABLE events (
 );
 
 
--- This is the table containing seats for a specific event.
--- An event seat is separate from the physical seat.
--- The table references the physical seat by a foreign key (seat_id)
+-- One row per seat per event, separate from the physical seat in seats.
+-- The same seat is sold separately for every concert: A-3 can be sold on Friday
+-- and still be available on Saturday, so its status can't live on seats.
 CREATE TABLE event_seats (
   id INTEGER PRIMARY KEY,
   event_id INTEGER NOT NULL,
@@ -49,8 +49,7 @@ CREATE TABLE event_seats (
   FOREIGN KEY (event_id) REFERENCES events(id),
   FOREIGN KEY (seat_id) REFERENCES seats(id),
 
-  -- Unique constraint ensures that a physical seat (seat_id) can only be sold once for the same event.
-  -- However, the same seat id can be sold for different events
+  -- Unique constraint ensures that a physical seat (seat_id) only appears once for the same event.
   UNIQUE (event_id, seat_id),
 
   -- Check constraint to ensure status is only one of 'available', 'held', or 'sold'
@@ -81,7 +80,7 @@ CREATE TABLE orders (
 CREATE TABLE order_items (
   id INTEGER PRIMARY KEY,
   order_id INTEGER NOT NULL,
-  event_seat_id INTEGER NOT NULL UNIQUE,
+  event_seat_id INTEGER NOT NULL UNIQUE -- unique constraint ensures the same seat can only be sold once per event
   price_cents INTEGER NOT NULL,
   FOREIGN KEY (order_id) REFERENCES orders(id),
   FOREIGN KEY (event_seat_id) REFERENCES event_seats(id)
