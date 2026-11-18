@@ -125,6 +125,7 @@ RSpec.describe 'db/schema.sql' do
 
       it 'accepts two event seats with the same physical seat id but different event ids' do
         insert_event(name: 'Gojira World Tour 2027 (night 2)', venue: 'Melkweg')
+        insert_event_seat(event: 'Gojira World Tour 2027', row_label: 'A', seat_number: 25)
 
         expect do
           insert_event_seat(event: 'Gojira World Tour 2027 (night 2)', row_label: 'A', seat_number: 25)
