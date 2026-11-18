@@ -30,7 +30,7 @@ CREATE TABLE seats (
 CREATE TABLE events (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
-  starts_at TEXT NOT NULL, --this column expects format ISO 8061 in UTC: SQLite has no date type, ,
+  starts_at TEXT NOT NULL, --this column expects format ISO 8601 in UTC: SQLite has no date type
   venue_id INTEGER NOT NULL,
   FOREIGN KEY (venue_id) REFERENCES venues(id)
 );
@@ -45,7 +45,7 @@ CREATE TABLE event_seats (
   seat_id INTEGER NOT NULL,
   status TEXT NOT NULL DEFAULT 'available',
   hold_token VARCHAR(100),
-  held_until TEXT, -- this column expects format ISO 8061 in UTC: SQLite has no date type,
+  held_until TEXT, -- this column expects format ISO 8601 in UTC: SQLite has no date type
   FOREIGN KEY (event_id) REFERENCES events(id),
   FOREIGN KEY (seat_id) REFERENCES seats(id),
 
