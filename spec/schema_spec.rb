@@ -250,11 +250,11 @@ RSpec.describe 'db/schema.sql' do
         insert_order(buyer_email: 'tomas.gic@example.com', price: -4500, transaction_id: '123456abdefg')
       end.to raise_error(SQLite3::ConstraintException, /CHECK constraint failed/)
     end
-  end
 
-  it 'accepts an order with total_cents of 0' do
-    expect do
-      insert_order(buyer_email: 'tomas.gic@example.com', price: 0, transaction_id: '123456abdefg')
-    end.not_to raise_error
+    it 'accepts an order with total_cents of 0' do
+      expect do
+        insert_order(buyer_email: 'tomas.gic@example.com', price: 0, transaction_id: '123456abdefg')
+      end.not_to raise_error
+    end
   end
 end
