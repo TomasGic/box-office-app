@@ -1,3 +1,54 @@
+#!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# !/usr/bin/env ruby
+require 'fileutils'
+require 'sqlite3'
+require_relative '../spec/support/db_summary_helper'
+
+root_dir = File.expand_path('..', __dir__)
+Dir.chdir(root_dir)
+
+db_path = 'db/development.sqlite3'
+schema_path = 'db/schema.sql'
+seed_path = 'db/seed.sql'
+
+def run_command(*args)
+  success = system(*args)
+  abort("Command failed: #{args.join(' ')}") unless success
+end
+
+abort("Error: Schema file not found at #{schema_path}") unless File.file?(schema_path)
+abort("Error: Seed file not found at #{seed_path}") unless File.file?(seed_path)
+
+puts 'Installing Ruby gems...'
+run_command('bundle', 'install')
+puts 'Ruby gems installed successfully'
+
+FileUtils.mkdir_p(File.dirname(db_path))
+FileUtils.rm_f(db_path)
+
+db = SQLite3::Database.new(db_path)
+
+begin
+  db.execute('PRAGMA foreign_keys = ON;')
+  db.execute_batch(File.read(schema_path))
+  db.execute_batch(File.read(seed_path))
+rescue SQLite3::Exception => e
+  abort("Database setup error: #{e.message}")
+end
+
+puts "Database rebuilt: #{db_path}"
+
+query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+
+begin
+  tables = db.execute(query).flatten
+  tables.each do |table|
+    rows_count = db.get_first_value(%(SELECT COUNT(*) FROM "#{table}"))
+    puts format_db_summary(table, rows_count) if rows_count.positive?
+  end
+rescue SQLite3::Exception => e
+  warn "Failed to generate short database summary: #{e.message}"
+ensure
+  db&.close
+end
