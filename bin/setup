@@ -5,18 +5,25 @@ require 'fileutils'
 require 'sqlite3'
 require_relative '../spec/support/db_summary_helper'
 
+# We change the script's current working directory to the project root directory
+# so that relative paths are resolved correctly regardless of where the script is run from
 root_dir = File.expand_path('..', __dir__)
 Dir.chdir(root_dir)
 
+# Define the relative file paths
 db_path = 'db/development.sqlite3'
 schema_path = 'db/schema.sql'
 seed_path = 'db/seed.sql'
 
+# Define a helper method that accepts the command parts, e.g. "bundle", "install"
+# These are then passed into the system method which then passes them as separate entries
+# in an argv array straight to the OS process loader
 def run_command(*args)
   success = system(*args)
   abort("Command failed: #{args.join(' ')}") unless success
 end
 
+# Check whether schema and seed exist before running the command
 abort("Error: Schema file not found at #{schema_path}") unless File.file?(schema_path)
 abort("Error: Seed file not found at #{seed_path}") unless File.file?(seed_path)
 
@@ -24,7 +31,9 @@ puts 'Installing Ruby gems...'
 run_command('bundle', 'install')
 puts 'Ruby gems installed successfully'
 
+# We create the directory (along with any nested directories) where the database file should live
 FileUtils.mkdir_p(File.dirname(db_path))
+# We delete the database file if it already exists and start with a fresh setup
 FileUtils.rm_f(db_path)
 
 db = SQLite3::Database.new(db_path)
@@ -39,8 +48,10 @@ end
 
 puts "Database rebuilt: #{db_path}"
 
+# Query that reads all the table names in the database
 query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
 
+# Printing a short summary with each table name (if it contains some data) and number of rows
 begin
   tables = db.execute(query).flatten
   tables.each do |table|
