@@ -6,7 +6,7 @@ This project simulates a real box-office app for a small concert venue and is bu
 
 
 ## Requirements
-* **Ruby**: version 3.4.7
+* **Ruby**: version 3.4.12
 * **Bundler**: version 2.6.9
 
 ## Setup
