@@ -2,8 +2,6 @@
 # frozen_string_literal: true
 
 require 'fileutils'
-require 'sqlite3'
-require_relative '../spec/support/db_summary_helper'
 
 # We change the script's current working directory to the project root directory
 # so that relative paths are resolved correctly regardless of where the script is run from
@@ -23,6 +21,19 @@ def run_command(*args)
   abort("Command failed: #{args.join(' ')}") unless success
 end
 
+# Define a helper method that formats the short database summary at the end of the script
+def format_db_summary(table_name, num_rows)
+  table_name_clean = table_name.tr('_', ' ')
+  singular = if table_name_clean.end_with?('ies')
+               "#{table_name_clean.sub(/ies\z/, '')}y"
+             else
+               table_name_clean.sub(/s\z/, '')
+             end
+  plural = table_name_clean
+  label = num_rows == 1 ? singular : plural
+  " #{num_rows} #{label}"
+end
+
 # Check whether schema and seed exist before running the command
 abort("Error: Schema file not found at #{schema_path}") unless File.file?(schema_path)
 abort("Error: Seed file not found at #{seed_path}") unless File.file?(seed_path)
@@ -30,6 +41,10 @@ abort("Error: Seed file not found at #{seed_path}") unless File.file?(seed_path)
 puts 'Installing Ruby gems...'
 run_command('bundle', 'install')
 puts 'Ruby gems installed successfully'
+
+# We require the gems here and not at the top of the file, because they only exist after 'bundle install' has run
+require 'bundler/setup'
+require 'sqlite3'
 
 # We create the directory (along with any nested directories) where the database file should live
 FileUtils.mkdir_p(File.dirname(db_path))
