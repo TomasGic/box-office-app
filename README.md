@@ -10,12 +10,10 @@ This project simulates a real box-office app for a small concert venue and is bu
 * **Bundler**: version 2.6.9
 
 ## Setup
-To set up the database, you can run the executable setup script from the project root directory with the command below:
-
 ```bash
-ruby bin/setup
+bin/setup
 ```
-The script creates or resets `db/development.sqlite3`, executes the sql statements inside `db/schema.sql`(defines the database structure and constraints) and `db/seed.sql` (inserts data into the tables). At the end the script prints a short summary with table names and number of rows populated"
+It installs the gems, rebuilds `db/development.sqlite3` from `db/schema.sql` and `db/seed.sql`, and prints how many rows each table has.
 
 ## Running the app
 
