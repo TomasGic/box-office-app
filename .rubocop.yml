@@ -18,3 +18,4 @@ RSpec/ExampleLength:
 RSpec/DescribeClass:
   Exclude:
     - 'spec/schema_spec.rb'
+    - 'spec/seed_spec.rb'
