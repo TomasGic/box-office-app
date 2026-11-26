@@ -54,7 +54,7 @@ ORDER BY sections.id, rs.row_label, rs.seat_number;
 INSERT INTO events (name, starts_at, venue_id)
 VALUES (
     'Spanish Flamenco Evening',
-    '2026-12-15T20:00:00Z',
+    strftime('%Y-%m-%dT20:00:00Z', 'now', '-30 days'),
     (SELECT id FROM venues WHERE venues.name = 'The Lantern Room')
 );
 
@@ -62,14 +62,14 @@ VALUES (
 INSERT INTO events (name, starts_at, venue_id)
 VALUES (
     'Christmas Open Mic',
-    '2026-12-22T20:00:00Z',
+    strftime('%Y-%m-%dT20:00:00Z', 'now', '+14 days'),
     (SELECT id FROM venues WHERE venues.name = 'The Lantern Room')
 );
 
 INSERT INTO events (name, starts_at, venue_id)
 VALUES (
     'Christmas Jazz Concert',
-    '2026-12-26T20:00:00Z',
+    strftime('%Y-%m-%dT20:00:00Z', 'now', '+30 days'),
     (SELECT id FROM venues WHERE venues.name = 'The Lantern Room')
 );
 
